@@ -3,12 +3,12 @@ mod cpu;
 use std::path::Path;
 
 use ndarray::{Array1, Array2, ArrayView2};
-#[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
 use ndarray::{ArrayViewMut2, s};
 
 use crate::inference::{ExecutionMode, InferenceError, ModelLoadError};
 
-#[cfg(any(feature = "migraphx", feature = "coreml"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml"))]
 mod buffers;
 #[cfg(feature = "coreml")]
 mod chunk;
@@ -17,10 +17,10 @@ mod cuda;
 mod load;
 #[cfg(feature = "coreml")]
 mod native;
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 mod onnx;
 mod paths;
-#[cfg(any(feature = "migraphx", feature = "coreml"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml"))]
 mod tensor;
 
 #[cfg(feature = "coreml")]
@@ -33,26 +33,26 @@ use cpu::CpuEmbedding;
 use cuda::CudaEmbedding;
 #[cfg(feature = "coreml")]
 use native::CoreMlEmbedding;
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 use onnx::OrtEmbedding;
 pub(crate) use paths::read_min_num_samples;
 use paths::select_mask;
 
 const PRIMARY_BATCH_SIZE: usize = 64;
 pub(crate) const EMBEDDING_WIDTH: usize = 256;
-#[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
 const MULTI_MASK_BATCH_SIZE: usize = 32;
-#[cfg(any(feature = "migraphx", feature = "coreml"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml"))]
 const FBANK_BATCH_SIZE: usize = 32;
 const CHUNK_SPEAKER_BATCH_SIZE: usize = 3;
-#[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
 const NUM_SPEAKERS: usize = 3;
-#[cfg(any(feature = "migraphx", feature = "coreml"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml"))]
 pub(crate) const FBANK_FRAMES: usize = 998;
 /// Hop between consecutive fbank frames, in samples (10ms at 16kHz)
 #[cfg(feature = "coreml")]
 pub(crate) const FBANK_HOP_SAMPLES: usize = 160;
-#[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
 pub(crate) const FBANK_FEATURES: usize = 80;
 const MASK_FRAMES: usize = 589;
 
@@ -161,7 +161,7 @@ pub struct EmbeddingModel {
 enum EmbeddingBackend {
     #[cfg(feature = "cpu")]
     Cpu(Box<CpuEmbedding>),
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     Ort(Box<OrtEmbedding>),
     #[cfg(feature = "coreml")]
     CoreMl(Box<CoreMlEmbedding>),
@@ -175,7 +175,7 @@ macro_rules! with_backend {
         match $backend {
             #[cfg(feature = "cpu")]
             EmbeddingBackend::Cpu($name) => $body,
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort($name) => $body,
             #[cfg(feature = "coreml")]
             EmbeddingBackend::CoreMl($name) => $body,
@@ -212,14 +212,14 @@ impl EmbeddingModel {
     /// state remain private to the new handle. A CUDA handle gets its own stream and
     /// device copy of the weights, because CUDA state is used by one thread at a time
     #[cfg(all(
-        any(feature = "cpu", feature = "migraphx", feature = "_cuda"),
+        any(feature = "cpu", feature = "_ort-models", feature = "_cuda"),
         not(feature = "coreml")
     ))]
     pub(crate) fn clone_shared(&self) -> Result<Self, InferenceError> {
         let backend = match &self.backend {
             #[cfg(feature = "cpu")]
             EmbeddingBackend::Cpu(backend) => EmbeddingBackend::Cpu(backend.clone()),
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(backend) => {
                 EmbeddingBackend::Ort(Box::new(backend.clone_shared()?))
             }
@@ -323,7 +323,7 @@ impl EmbeddingModel {
         let primary_batch = match &mut self.backend {
             #[cfg(feature = "cpu")]
             EmbeddingBackend::Cpu(_) => None,
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(backend) => {
                 backend.try_embed_primary_batch(&self.meta, inputs)?
             }
@@ -374,7 +374,7 @@ impl EmbeddingModel {
             EmbeddingBackend::Cpu(backend) => backend
                 .embed_multi_mask_audio_batch(&self.meta, &windows.slices(), masks)
                 .map(MultiMaskStart::Done),
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(backend) => backend
                 .embed_multi_mask_audio_batch(&self.meta, &windows.slices(), masks)
                 .map(MultiMaskStart::Done),
@@ -398,7 +398,7 @@ impl EmbeddingModel {
             EmbeddingBackend::Cpu(_) => Err(InferenceError::MissingOutput {
                 context: "cpu multi-mask batch is not running",
             }),
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(_) => Err(InferenceError::MissingOutput {
                 context: "ort multi-mask batch is not running",
             }),
@@ -504,7 +504,7 @@ impl EmbeddingModel {
             EmbeddingBackend::CoreMl(backend) => Some(backend),
             #[cfg(feature = "cpu")]
             EmbeddingBackend::Cpu(_) => None,
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(_) => None,
             #[cfg(feature = "_cuda")]
             EmbeddingBackend::Cuda(_) => None,
@@ -525,7 +525,7 @@ impl EmbeddingModel {
             EmbeddingBackend::CoreMl(backend) => backend.chunk_window_capacity(),
             #[cfg(feature = "cpu")]
             EmbeddingBackend::Cpu(_) => None,
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             EmbeddingBackend::Ort(_) => None,
             #[cfg(feature = "_cuda")]
             EmbeddingBackend::Cuda(_) => None,
@@ -572,7 +572,7 @@ fn array1_slice<'a>(
 }
 
 /// Copy one weight row, truncating or zero-padding to `mask_frames`
-#[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
 fn prepare_weights(
     batch_idx: usize,
     weights: &[f32],

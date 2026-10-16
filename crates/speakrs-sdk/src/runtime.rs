@@ -17,6 +17,8 @@ pub fn mode_name(mode: ExecutionMode) -> &'static str {
         ExecutionMode::Cuda => "CUDA",
         ExecutionMode::CudaFast => "CUDAFast",
         ExecutionMode::MiGraphX => "MIGraphX",
+        ExecutionMode::DirectMl => "DirectML",
+        ExecutionMode::OrtCpu => "ORTCPU",
         _ => "unknown",
     }
 }

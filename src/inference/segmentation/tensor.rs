@@ -5,7 +5,7 @@ use ndarray::{Array2, Array3};
 
 use super::SegmentationError;
 
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 pub(super) type OutputShape3 = (usize, usize, usize);
 
 /// Non-zero sliding-window length and step used by segmentation
@@ -242,7 +242,7 @@ pub(super) fn padded_window<'a>(
         })
 }
 
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 pub(super) fn first_output<T>(
     outputs: impl IntoIterator<Item = T>,
     context: &'static str,
@@ -256,7 +256,7 @@ pub(super) fn first_output<T>(
         })
 }
 
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 pub(super) fn output_shape3(
     shape: &ort::value::Shape,
     context: &'static str,
@@ -314,7 +314,7 @@ pub(super) fn worker_panic(worker: &'static str) -> SegmentationError {
 #[cfg(test)]
 mod tests {
     use super::{SegmentationWindows, WindowSpec, segmentation_window_count};
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     use super::{first_output, output_shape3};
 
     #[test]
@@ -347,7 +347,7 @@ mod tests {
         WindowSpec::new(window_samples, step_samples).expect("non-zero window spec")
     }
 
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     #[test]
     fn first_output_reports_missing_tensor() {
         let error = first_output(Vec::<()>::new(), "segmentation test").unwrap_err();
@@ -358,7 +358,7 @@ mod tests {
         );
     }
 
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     #[test]
     fn output_shape3_reports_low_rank_tensor() {
         let shape = ort::value::Shape::from([10_i64, 3]);

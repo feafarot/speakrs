@@ -22,7 +22,7 @@ pub use geometry::TensorShapeError;
 pub use native_model::NativeWeightsError;
 #[cfg(feature = "_ort")]
 pub use ort_runtime::{DynamicRuntimeError, OrtRuntimeError, with_execution_mode};
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 pub(crate) use ort_runtime::{OrtProvider, SharedSession, ensure_ort_ready};
 pub use segmentation::{SegmentationError, SegmentationModel};
 
@@ -88,6 +88,13 @@ pub enum ExecutionMode {
     /// AMD GPU via ONNX Runtime's MIGraphX execution provider
     #[cfg_attr(docsrs, doc(cfg(feature = "migraphx")))]
     MiGraphX,
+    /// Any DirectX 12 GPU on Windows via ONNX Runtime's DirectML execution provider,
+    /// falling back to ONNX Runtime's CPU provider when no usable GPU is found
+    #[cfg_attr(docsrs, doc(cfg(feature = "directml")))]
+    DirectMl,
+    /// ONNX Runtime's CPU execution provider running the ONNX models
+    #[cfg_attr(docsrs, doc(cfg(feature = "ort-cpu")))]
+    OrtCpu,
 }
 
 impl ExecutionMode {
@@ -104,6 +111,11 @@ impl ExecutionMode {
     /// Returns true when this mode uses the MIGraphX execution provider
     pub const fn is_migraphx(self) -> bool {
         matches!(self, Self::MiGraphX)
+    }
+
+    /// Returns true when this mode runs the ONNX models through ONNX Runtime
+    pub const fn is_ort(self) -> bool {
+        matches!(self, Self::MiGraphX | Self::DirectMl | Self::OrtCpu)
     }
 
     pub(crate) fn validate(self) -> Result<(), ExecutionModeError> {
@@ -141,6 +153,20 @@ impl ExecutionMode {
                 mode: self,
                 feature: "migraphx",
             }),
+            #[cfg(feature = "directml")]
+            Self::DirectMl => Ok(InferenceBackend::Ort(OrtProvider::DirectMl)),
+            #[cfg(not(feature = "directml"))]
+            Self::DirectMl => Err(ExecutionModeError {
+                mode: self,
+                feature: "directml",
+            }),
+            #[cfg(feature = "_ort-models")]
+            Self::OrtCpu => Ok(InferenceBackend::Ort(OrtProvider::Cpu)),
+            #[cfg(not(feature = "_ort-models"))]
+            Self::OrtCpu => Err(ExecutionModeError {
+                mode: self,
+                feature: "ort-cpu",
+            }),
         }
     }
 
@@ -153,6 +179,8 @@ impl ExecutionMode {
             Self::Cuda => "cuda",
             Self::CudaFast => "cuda-fast",
             Self::MiGraphX => "migraphx",
+            Self::DirectMl => "directml",
+            Self::OrtCpu => "ort-cpu",
         }
     }
 }
@@ -173,7 +201,7 @@ pub(crate) enum InferenceBackend {
     #[cfg(feature = "cpu")]
     Cpu,
     /// ONNX Runtime with one execution provider
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     Ort(OrtProvider),
     /// Native CoreML models
     #[cfg(feature = "coreml")]
@@ -189,7 +217,7 @@ mod tests {
         not(feature = "cpu"),
         not(feature = "coreml"),
         not(feature = "_cuda"),
-        not(feature = "migraphx")
+        not(feature = "_ort-models")
     ))]
     use super::ExecutionMode;
 

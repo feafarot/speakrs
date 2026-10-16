@@ -696,7 +696,7 @@ impl FbankSessionPool {
         }
     }
 
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     pub(crate) fn resolve(self, threads: OrtThreadCount) -> usize {
         match self {
             Self::Automatic => {
@@ -936,7 +936,9 @@ pub const fn segmentation_step_seconds(mode: ExecutionMode) -> f64 {
         ExecutionMode::CoreMlFast | ExecutionMode::CudaFast => FAST_SEGMENTATION_STEP_SECONDS,
         ExecutionMode::CoreMl => COREML_SEGMENTATION_STEP_SECONDS,
         ExecutionMode::Cuda => CUDA_SEGMENTATION_STEP_SECONDS,
-        ExecutionMode::MiGraphX => CUDA_SEGMENTATION_STEP_SECONDS,
+        ExecutionMode::MiGraphX | ExecutionMode::DirectMl | ExecutionMode::OrtCpu => {
+            CUDA_SEGMENTATION_STEP_SECONDS
+        }
         ExecutionMode::Cpu => SEGMENTATION_STEP_SECONDS,
     }
 }
@@ -984,7 +986,7 @@ mod clean_frame_duration_tests {
         );
     }
 
-    #[cfg(feature = "migraphx")]
+    #[cfg(feature = "_ort-models")]
     #[test]
     fn fbank_pool_models_disabled_automatic_and_fixed_policies() {
         let threads = OrtThreadCount::new(i32::MAX as usize).unwrap();

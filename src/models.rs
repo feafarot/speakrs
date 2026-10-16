@@ -428,7 +428,7 @@ fn catalog_assets(mode: ExecutionMode) -> Vec<ModelAsset> {
                 )
             }));
         }
-        ExecutionMode::MiGraphX => {
+        ExecutionMode::MiGraphX | ExecutionMode::DirectMl | ExecutionMode::OrtCpu => {
             assets.push(onnx_asset(
                 "segmentation-3.0.onnx",
                 ModelFamily::Segmentation,

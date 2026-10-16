@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Add `ExecutionMode::DirectMl` (`directml` feature): the ONNX models on any DirectX 12 GPU on Windows through ONNX Runtime's DirectML provider, falling back to its CPU provider without a usable GPU; it needs a DirectML-enabled ONNX Runtime and `DirectML.dll` beside the executable
+- Add `ExecutionMode::OrtCpu` (`ort-cpu` feature): the ONNX models on ONNX Runtime's CPU provider, several times faster than native `cpu` on x86
+- Accept `ort` 2.0.0-rc.12, so speakrs builds alongside crates that pin it
+- Drop `ndarray-npy`'s npz support, whose `zip` dependency only allows yanked releases and broke fresh builds
+
 ## [0.7.0] - 2026-10-15
 
 - Add Python bindings: `pip install speakrs` ships one abi3 wheel per platform, with CPU and CoreML on macOS arm64 and CPU and CUDA on Linux x86_64, plus a `speakrs diarize` command; see `crates/speakrs-python`

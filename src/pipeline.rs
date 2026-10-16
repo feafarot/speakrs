@@ -226,13 +226,13 @@ impl OwnedDiarizationPipeline {
     /// its own copy of the models on a new CUDA stream, because CUDA state is used by
     /// one thread at a time
     #[cfg(all(
-        any(feature = "cpu", feature = "migraphx", feature = "_cuda"),
+        any(feature = "cpu", feature = "_ort-models", feature = "_cuda"),
         not(feature = "coreml")
     ))]
     #[cfg_attr(
         docsrs,
         doc(cfg(all(
-            any(feature = "cpu", feature = "_cuda", feature = "migraphx"),
+            any(feature = "cpu", feature = "_cuda", feature = "_ort-models"),
             not(feature = "coreml")
         )))
     )]
@@ -411,6 +411,8 @@ impl<'a> PipelineRunner<'a> {
                 | ExecutionMode::Cuda
                 | ExecutionMode::CudaFast
                 | ExecutionMode::MiGraphX
+                | ExecutionMode::DirectMl
+                | ExecutionMode::OrtCpu
         ) {
             InferencePath::Concurrent
         } else {

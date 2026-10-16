@@ -10,7 +10,7 @@ pub use crate::inference::native_model::fbank::{
 };
 
 // the CUDA filterbank must produce exactly the fbank contract the embedding models share
-#[cfg(any(feature = "migraphx", feature = "coreml"))]
+#[cfg(any(feature = "_ort-models", feature = "coreml"))]
 const _: () = assert!(FBANK_FRAMES == crate::inference::embedding::FBANK_FRAMES);
 const _: () = assert!(FBANK_MEL_BINS == crate::inference::embedding::FBANK_FEATURES);
 

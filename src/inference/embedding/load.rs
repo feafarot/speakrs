@@ -9,7 +9,7 @@ use super::CoreMlEmbedding;
 use super::CpuEmbedding;
 #[cfg(feature = "_cuda")]
 use super::CudaEmbedding;
-#[cfg(feature = "migraphx")]
+#[cfg(feature = "_ort-models")]
 use super::OrtEmbedding;
 use super::{EmbeddingBackend, EmbeddingMeta, EmbeddingModel, MASK_FRAMES, read_min_num_samples};
 #[cfg(feature = "cpu")]
@@ -24,7 +24,7 @@ impl EmbeddingModel {
         mode: ExecutionMode,
         #[cfg_attr(
             not(any(
-                feature = "migraphx",
+                feature = "_ort-models",
                 feature = "coreml",
                 feature = "_cuda",
                 feature = "_metrics"
@@ -45,7 +45,7 @@ impl EmbeddingModel {
         }
 
         let model_path = model_path.as_ref();
-        #[cfg(any(feature = "migraphx", feature = "coreml", feature = "_cuda"))]
+        #[cfg(any(feature = "_ort-models", feature = "coreml", feature = "_cuda"))]
         let default_metadata = model_path.with_extension("min_num_samples.txt");
         let (backend, metadata_path) = match backend {
             #[cfg(feature = "cpu")]
@@ -56,7 +56,7 @@ impl EmbeddingModel {
                     assets.metadata().to_owned(),
                 )
             }
-            #[cfg(feature = "migraphx")]
+            #[cfg(feature = "_ort-models")]
             InferenceBackend::Ort(provider) => (
                 EmbeddingBackend::Ort(Box::new(OrtEmbedding::load(model_path, provider, config)?)),
                 default_metadata,

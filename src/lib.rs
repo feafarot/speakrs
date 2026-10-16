@@ -412,17 +412,18 @@ compile_error!(
      - macOS (Apple Silicon): `coreml`\n\
      - NVIDIA GPU: `cuda`, or a `cuda-sm75`/`cuda-sm80`/`cuda-sm90`/`cuda-sm120` target (native, no ONNX Runtime)\n\
      - AMD GPU: `migraphx`\n\
-     - CPU (native Rust): `cpu`\n\
+     - Windows, any DirectX 12 GPU: `directml`\n\
+     - CPU (native Rust): `cpu`, or `ort-cpu` for ONNX Runtime's CPU provider\n\
      for example: speakrs = { version = \"0.6\", features = [\"coreml\"] }"
 );
 
 #[cfg(all(
     feature = "load-dynamic",
-    not(any(feature = "cpu", feature = "migraphx"))
+    not(any(feature = "cpu", feature = "_ort-models"))
 ))]
 compile_error!(
-    "the `load-dynamic` feature loads ONNX Runtime at run time and only applies to the `cpu` and \
-     `migraphx` backends; the `cuda` and `coreml` backends do not use ONNX Runtime"
+    "the `load-dynamic` feature loads ONNX Runtime at run time and only applies to the `cpu`, \
+     `migraphx`, `directml`, and `ort-cpu` backends; the `cuda` and `coreml` backends do not use ONNX Runtime"
 );
 
 // a build without a backend reports only the `compile_error!` above: every crate item is gated
